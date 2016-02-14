@@ -46,35 +46,35 @@ class Demac_MultiLocationInventory_Model_Observer
      *
      * @TODO pass off removeStockFromLocations and backorderRemainingStock to some sort of background worker.
      */
-    public function checkoutAllSubmitAfter($observer)
-    {
+    public function checkoutAllSubmitAfter($observer) {
         if(Mage::getStoreConfig('cataloginventory/options/can_subtract')) {
-
             $order   = $observer->getEvent()->getOrder();
             $quote   = $observer->getEvent()->getQuote();
             $orderId = $order->getId();
             $storeId = $order->getStoreId();
-
             $this->checkoutProducts = array();
             $updatedProducts        = array();
             $quoteItems             = $observer->getEvent()->getQuote()->getAllItems();
-
             foreach ($quoteItems as $quoteItem) {
-                if(sizeof($quoteItem->getChildren()) == 0) {
+                // MODS SMCD 27 Jan 16 - for bundles decrement the sku inventory by the parent qty (X) sku qty
+                if(sizeof($quoteItem->getChildren()) == 0) {   // if the item has no children ie its a simple, not a config or bundle
                     $updatedProducts[] = $quoteItem->getProductId();
-
-                    $this->checkoutProducts[$quoteItem->getId()] = $quoteItem->getQty();
-                    if(!is_null($quoteItem->getParentItem())) {
-                        $this->checkoutProducts[$quoteItem->getId()] = $quoteItem->getParentItem()->getQty();
+                    $this->checkoutProducts[$quoteItem->getId()] = $quoteItem->getQty(); // use the simple qty
+                    if(!is_null($quoteItem->getParentItem())) { // but if its a simple and it has a parent
+                        Mage::log( "product=" . $quoteItem->getProductId() . " type=" . trim( $quoteItem->getParentItem()->getProductType() ) . " qty=" . $quoteItem->getQty() . " Pqty="  . $quoteItem->getParentItem()->getQty() );
+                        if ( trim( $quoteItem->getParentItem()->getProductType() )  == 'bundle' ) {
+                           $this->checkoutProducts[$quoteItem->getId()] = $quoteItem->getQty() * $quoteItem->getParentItem()->getQty(); // use the simple qty X parent qty
+                        } else {
+                           $this->checkoutProducts[$quoteItem->getId()] = $quoteItem->getParentItem()->getQty(); // use the parent qty ie virtuals and configs etc
+                        }
                     }
                 }
             }
-
             $this->removeStockFromLocations($order, $quote);
-
             Mage::getModel('demac_multilocationinventory/indexer')->reindex($updatedProducts);
         }
     }
+
 
     /**
      * Remove stock from locations.
