@@ -38,9 +38,19 @@ class Demac_MultiLocationInventory_Model_Stock_Status_Index
             $productIds           = array_merge($productIds, $associatedProductIds);
             //Update multi location inventory stock status index table for specified products
             $write->exec('CALL DEMAC_MLI_REINDEX_SET("'.implode(',', $productIds).'")');
+            // MOD SMCD 27 Jan 16 - add a bundle index process if the skus belong to bundles or configs
+           foreach ( $productIds as $pId ) {
+               $t_parentIds = Mage::getModel('bundle/product_type')->getParentIdsByChild($pId);
+               if ( sizeof( $t_parentIds )  > 0 ) {
+                 $write->exec('CALL XPRAC_REINDEX_ALL_BUN()');
+                 break; // only need to find one!
+               }
+            }
         } else {
             //Update multi location inventory stock status index table globally.
             $write->exec('CALL DEMAC_MLI_REINDEX_ALL()');
+            // MOD SMCD 27 Jan 16 - add a bundle index process
+            $write->exec('CALL XPRAC_REINDEX_ALL_BUN()');
         }
 
         //Update core stock status table.
