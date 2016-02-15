@@ -30,7 +30,8 @@ class Demac_MultiLocationInventory_Model_CatalogInventory_Stock extends Mage_Cat
         foreach ($items as $item) {
             $stockItems[$item->getProductId()] = $item;
         }
-        foreach ($productCollection as &$product) {
+        // MOD SMCD - look like bug  - foreach ($productCollection as &$product) {
+        foreach ($productCollection as $product) {
             if(isset($stockItems[$product->getId()])) {
                 $stockItem = Mage::getModel('cataloginventory/stock_item');
                 $stockItem->setStockId(1);
