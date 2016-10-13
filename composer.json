@@ -1,5 +1,5 @@
 {
-    "name": "demac/multilocationinventory",
+    "name": "dvdsndr/Magento-Multi-Location-Inventory",
     "type": "magento-module",
     "description": "Support for multiple inventory locations in Magento.",
     "authors": [
